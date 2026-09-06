@@ -31,12 +31,22 @@ export interface SeqMove {
 /**
  * Comment un exercice est restitué. Le contenu ne suffit pas à le décrire : la même
  * position travaille la lecture ou l'intuition selon la façon dont on la sert.
+ *
+ * `guess` désigne un coup à corriger, c'est-à-dire une position où l'on doit retrouver
+ * le coup qu'il fallait jouer. Le nom technique est resté pour ne pas invalider les
+ * exercices déjà enregistrés.
  */
 export type DrillMode = 'blind' | 'guess';
 
 export const MODE_LABELS: Record<DrillMode, string> = {
   blind: 'Lecture à l’aveugle',
-  guess: 'Deviner le coup',
+  guess: 'Coup à corriger',
+};
+
+/** Deux couleurs distinctes : les deux types ne doivent pas se confondre dans une liste. */
+export const MODE_TAG_CLASS: Record<DrillMode, string> = {
+  blind: 'tag accent',
+  guess: 'tag iris',
 };
 
 /** État de répétition espacée. Voir srs.ts pour la mécanique. */

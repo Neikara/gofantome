@@ -17,7 +17,6 @@ interface Row {
   hits: number;
   /** -1 quand jamais tentée, pour la faire remonter au tri. */
   rate: number;
-  toFix: boolean;
 }
 
 const SIZES = [10, 20, 50];
@@ -60,7 +59,6 @@ export default function Intuition() {
         tries: tries.length,
         hits,
         rate: tries.length ? hits / tries.length : -1,
-        toFix: s.playedInGame !== null && s.playedInGame !== undefined,
       };
     });
   }, [guesses, allAttempts]);
@@ -159,7 +157,7 @@ export default function Intuition() {
         <div>
           <h1>Intuition</h1>
           <p className="sub">
-            Tous les exercices d'un coup, enchaînés en série. Ici on cherche le volume et la
+            Tous les coups à corriger, enchaînés en série. Ici on cherche le volume et la
             vitesse : si tu as le temps de calculer, baisse le chrono.
           </p>
         </div>
@@ -168,8 +166,8 @@ export default function Intuition() {
 
       {stats.total === 0 ? (
         <div className="empty">
-          Aucun exercice d'un coup. Ouvre une partie, place-toi sur une position, puis
-          « Deviner le coup » — ou « Corriger le coup » sur tes propres erreurs.
+          Aucun coup à corriger. Ouvre une partie, place-toi sur un coup que tu regrettes,
+          puis « Corriger le coup » : tu désignes celui qu'il fallait jouer.
         </div>
       ) : (
         <>
@@ -255,7 +253,6 @@ export default function Intuition() {
                 <div className="main">
                   <div className="title">{r.name}</div>
                   <div className="meta">
-                    {r.toFix && <span className="tag accent">à corriger</span>}
                     {r.tags.map(t => <span key={t} className="tag">{t}</span>)}
                     <span>{r.tries === 0 ? 'jamais tenté' : `${r.hits}/${r.tries} réussis`}</span>
                     <span>{dueLabel(r.due)}</span>

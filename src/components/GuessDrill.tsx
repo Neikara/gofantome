@@ -17,7 +17,7 @@ function setupStones(seq: Sequence): Uint8Array {
 }
 
 /**
- * « Deviner le coup » : une position, un coup, quelques secondes.
+ * « Coup à corriger » : une position, un coup, quelques secondes.
  *
  * Contrairement à la lecture à l'aveugle, la position reste entièrement visible pendant
  * la réponse — mais elle n'apparaît qu'au départ du chrono. La montrer avant laisserait
@@ -207,8 +207,8 @@ export default function GuessDrill({
               pour poser <strong>un seul coup</strong>, à l'instinct.
             </p>
             <p className="small muted">
-              Ne cherche pas à lire : si tu calcules, tu travailles autre chose. La référence
-              est le coup réellement joué dans la partie — un autre bon coup comptera comme faux.
+              Ne cherche pas à lire : si tu calcules, tu travailles autre chose. Retrouve le
+              coup que tu as désigné comme bon ; les variantes que tu as acceptées comptent aussi.
             </p>
             {seq.notes && <div className="banner info small">{seq.notes}</div>}
             <div className="stat-row" style={{ marginTop: '.8rem' }}>

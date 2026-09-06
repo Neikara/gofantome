@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DrillSession from '../components/DrillSession';
 import { useStore } from '../state/store';
-import { MODE_LABELS, type Attempt, type DrillMode, type Sequence } from '../services/model';
+import { MODE_LABELS, MODE_TAG_CLASS, type Attempt, type DrillMode, type Sequence } from '../services/model';
 import { dueLabel, isDue } from '../services/srs';
 
 type ModeFilter = 'all' | DrillMode;
@@ -143,7 +143,7 @@ export default function Review() {
                 <div className="main">
                   <div className="title">{s.name}</div>
                   <div className="meta">
-                    <span className="tag accent">{MODE_LABELS[s.mode]}</span>
+                    <span className={MODE_TAG_CLASS[s.mode]}>{MODE_LABELS[s.mode]}</span>
                     <span>{s.moves.length} coup{s.moves.length > 1 ? 's' : ''}</span>
                     {s.tags.map(t => <span key={t} className="tag">{t}</span>)}
                     <span>{s.srs.reps === 0 ? 'jamais révisé' : `${s.srs.reps} révision${s.srs.reps > 1 ? 's' : ''}`}</span>
@@ -168,7 +168,7 @@ export default function Review() {
                 <div className="main">
                   <div className="title">{s.name}</div>
                   <div className="meta">
-                    <span className="tag accent">{MODE_LABELS[s.mode]}</span>
+                    <span className={MODE_TAG_CLASS[s.mode]}>{MODE_LABELS[s.mode]}</span>
                     <span>{dueLabel(s.srs.due)}</span>
                     {s.tags.map(t => <span key={t} className="tag">{t}</span>)}
                   </div>

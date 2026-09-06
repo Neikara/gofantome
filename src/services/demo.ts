@@ -1,11 +1,13 @@
 import { buildReplay } from '../core/replay';
 import type { DrillMode, Sequence, StoredGame } from './model';
-import { GUESS_TIMER_SECONDS } from './model';
 import { newSrs } from './srs';
 
 /**
- * Données de démonstration : une vraie partie OGS et deux séquences prêtes à jouer,
- * pour qu'un visiteur puisse essayer l'exercice sans rien importer.
+ * Données de démonstration : une vraie partie OGS et deux séquences de lecture prêtes
+ * à jouer, pour qu'un visiteur puisse essayer l'exercice sans rien importer.
+ *
+ * Pas d'exercice « coup à corriger » ici : il faudrait désigner le coup qu'il fallait
+ * jouer, ce qui demande un jugement sur la partie qu'on ne peut pas inventer.
  */
 
 export const DEMO_GAME_ID = 'ogs:90256275';
@@ -54,28 +56,6 @@ const SPECS: DemoSpec[] = [
     tags: ['combat'],
     notes: 'Huit coups groupés dans le bas du plateau : un contact serré, plus facile à situer. '
       + "Commence par celle-ci pour prendre le pli de l'exercice.",
-  },
-  {
-    id: 'demo-guess-1',
-    name: 'Réponse au contact (coup 110)',
-    startAt: 109,
-    length: 1,
-    timerSeconds: GUESS_TIMER_SECONDS,
-    mode: 'guess',
-    tags: ['combat', 'intuition'],
-    notes: "Un seul coup, cinq secondes, sans calculer. Dans un contact serré la réponse est "
-      + "souvent forcée : c'est exactement ce que l'intuition doit reconnaître d'un coup d'œil.",
-  },
-  {
-    id: 'demo-guess-2',
-    name: 'Suite du contact (coup 114)',
-    startAt: 113,
-    length: 1,
-    timerSeconds: GUESS_TIMER_SECONDS,
-    mode: 'guess',
-    tags: ['combat', 'intuition'],
-    notes: 'Même combat, quatre coups plus loin. La référence est le coup réellement joué '
-      + "dans la partie — il peut exister d'autres bons coups.",
   },
 ];
 

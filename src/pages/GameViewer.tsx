@@ -6,7 +6,7 @@ import { buildReplay, turnAfter } from '../core/replay';
 import { play } from '../core/board';
 import { indexToLabel } from '../core/coords';
 import type { Color, Position } from '../core/types';
-import { defaultTimer, uid, GUESS_TIMER_SECONDS, MODE_LABELS, type SeqMove, type Sequence } from '../services/model';
+import { defaultTimer, uid, GUESS_TIMER_SECONDS, MODE_LABELS, MODE_TAG_CLASS, type SeqMove } from '../services/model';
 import { newSrs } from '../services/srs';
 
 interface Recording {
@@ -26,7 +26,6 @@ export default function GameViewer() {
   // Le selecteur doit renvoyer une reference stable : on filtre en dehors du store.
   const allSequences = useStore(s => s.sequences);
   const addSequence = useStore(s => s.addSequence);
-  const addSequences = useStore(s => s.addSequences);
   const removeSequences = useStore(s => s.removeSequences);
   // Triés par numéro de coup : dans une partie, on se repère par la position, pas par
   // la date de création.
@@ -44,8 +43,6 @@ export default function GameViewer() {
   const [name, setName] = useState('');
   const [timer, setTimer] = useState(30);
   const [flashMs, setFlashMs] = useState(400);
-  const [guessColor, setGuessColor] = useState<'both' | 'black' | 'white'>('both');
-  const [guessCount, setGuessCount] = useState(5);
   const [notice, setNotice] = useState<string | null>(null);
   /** Exercice de correction en cours de création : on désigne le coup qu'il fallait jouer. */
   const [fix, setFix] = useState<null | { at: number; answer: number | null; accept: number[] }>(null);
@@ -280,7 +277,7 @@ export default function GameViewer() {
       timerSeconds: GUESS_TIMER_SECONDS,
       flashMs: 400,
       mode: 'guess',
-      tags: ['à corriger'],
+      tags: [],
       srs: newSrs(),
       notes: "Le coup joué dans la partie n'était pas le bon : retrouve celui qu'il fallait jouer.",
     });
@@ -307,39 +304,6 @@ export default function GameViewer() {
     });
     setRec(null);
     navigate(`/train/${seqId}`);
-  };
-
-  /**
-   * Crée des exercices « deviner le coup » à partir des coups réellement joués.
-   * Aucune IA nécessaire : dans une partie de joueur fort, le coup joué est la référence.
-   */
-  const createGuesses = async (count: number) => {
-    const created: Sequence[] = [];
-    const now = Date.now();
-    for (let at = cursor; at < total && created.length < count; at++) {
-      const mv = replay.moves[at];
-      // On ne fait pas deviner un pass, et on respecte la couleur demandée.
-      if (mv.point === null) continue;
-      if (guessColor !== 'both' && mv.color !== (guessColor === 'black' ? 1 : 2)) continue;
-      created.push({
-        id: uid(),
-        name: `${gameLabel} — coup ${at + 1}`,
-        createdAt: now - created.length,
-        size,
-        setup: splitStones(at),
-        moves: [{ point: mv.point, color: mv.color }],
-        origin: { gameId, gameLabel, moveNumber: at },
-        timerSeconds: GUESS_TIMER_SECONDS,
-        flashMs: 400,
-        mode: 'guess',
-        tags: [],
-        srs: newSrs(now),
-      });
-    }
-    if (!created.length) { setProblem('Aucun coup à transformer en devinette ici.'); return; }
-    await addSequences(created);
-    if (created.length === 1) navigate(`/train/${created[0].id}`);
-    else setNotice(`${created.length} devinettes créées, prêtes dans la file de révision.`);
   };
 
   return (
@@ -480,46 +444,13 @@ export default function GameViewer() {
               </div>
 
               <div className="card">
-                <h3>Deviner le coup</h3>
+                <h3>Coup à corriger</h3>
                 <p className="small muted">
-                  Le coup réellement joué devient la réponse. À faire sur les parties de
-                  joueurs plus forts que toi : c'est leur intuition que tu copies.
-                </p>
-                <div className="row">
-                  <div className="field grow" style={{ minWidth: 90 }}>
-                    <label htmlFor="g-count">Combien</label>
-                    <input
-                      id="g-count" type="number" min={1} max={50} value={guessCount}
-                      onChange={e => setGuessCount(Number(e.target.value))}
-                    />
-                  </div>
-                  <div className="field grow" style={{ minWidth: 110 }}>
-                    <label htmlFor="g-color">Coups de</label>
-                    <select
-                      id="g-color" value={guessColor}
-                      onChange={e => setGuessColor(e.target.value as typeof guessColor)}
-                    >
-                      <option value="both">Les deux</option>
-                      <option value="black">Noir</option>
-                      <option value="white">Blanc</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="row">
-                  <button className="grow" onClick={() => void createGuesses(1)} disabled={cursor >= total}>
-                    Ce coup seul
-                  </button>
-                  <button className="primary grow" onClick={() => void createGuesses(guessCount)} disabled={cursor >= total}>
-                    Créer {guessCount}
-                  </button>
-                </div>
-                <hr style={{ border: 0, borderTop: '1px solid var(--line)', margin: '.9rem 0' }} />
-                <p className="small muted">
-                  Sur tes propres parties, le coup joué est souvent l'erreur. Désigne alors
-                  toi-même la bonne réponse.
+                  Place-toi sur un coup que tu regrettes, puis désigne celui qu'il fallait
+                  jouer. L'exercice te demandera de le retrouver, sans calculer.
                 </p>
                 <button
-                  style={{ width: '100%' }}
+                  className="primary" style={{ width: '100%' }}
                   disabled={cursor >= total}
                   onClick={() => setFix({ at: cursor, answer: null, accept: [] })}
                 >
@@ -577,7 +508,7 @@ export default function GameViewer() {
                         <div className="main">
                           <div className="title" style={{ fontSize: '.85rem' }}>{s.name}</div>
                           <div className="meta">
-                            <span className="tag accent">{MODE_LABELS[s.mode]}</span>
+                            <span className={MODE_TAG_CLASS[s.mode]}>{MODE_LABELS[s.mode]}</span>
                             <span>coup {(s.origin?.moveNumber ?? 0) + 1}</span>
                           </div>
                         </div>

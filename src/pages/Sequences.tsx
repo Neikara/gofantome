@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../state/store';
-import { MODE_LABELS, type Attempt, type DrillMode, type Sequence } from '../services/model';
+import type { Attempt, Sequence } from '../services/model';
 import { dueLabel, isDue } from '../services/srs';
 
 type SortKey = 'due' | 'recent' | 'weakest' | 'longest';
-type ModeFilter = 'all' | DrillMode;
 
 interface Row {
   seq: Sequence;
@@ -27,18 +26,21 @@ export default function Sequences() {
   const updateSequence = useStore(s => s.updateSequence);
 
   const [sort, setSort] = useState<SortKey>('due');
-  const [modeFilter, setModeFilter] = useState<ModeFilter>('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [editing, setEditing] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftTags, setDraftTags] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  // Cette page ne montre que la lecture à l'aveugle ; les coups à corriger vivent
+  // dans l'onglet Intuition, qui se travaille tout autrement.
+  const blind = useMemo(() => sequences.filter(s => s.mode === 'blind'), [sequences]);
+
   const tags = useMemo(() => {
     const all = new Set<string>();
-    for (const s of sequences) for (const t of s.tags) all.add(t);
+    for (const s of blind) for (const t of s.tags) all.add(t);
     return [...all].sort((a, b) => a.localeCompare(b, 'fr'));
-  }, [sequences]);
+  }, [blind]);
 
   const rows = useMemo<Row[]>(() => {
     const byId = new Map<string, Attempt[]>();
@@ -46,21 +48,20 @@ export default function Sequences() {
       const list = byId.get(a.seqId);
       if (list) list.push(a); else byId.set(a.seqId, [a]);
     }
-    const out = sequences
-      .filter(s => modeFilter === 'all' || s.mode === modeFilter)
+    const out = blind
       .filter(s => tagFilter === 'all' || s.tags.includes(tagFilter))
       .map(seq => {
         const attempts = (byId.get(seq.id) ?? []).sort((a, b) => b.at - a.at);
         const best = attempts.length ? Math.max(...attempts.map(a => a.score)) : null;
         const last = attempts.length ? attempts[0].score : null;
-        const max = Math.max(1, seq.mode === 'guess' ? 1 : seq.moves.length);
+        const max = Math.max(1, seq.moves.length);
         return { seq, attempts, best, last, mastery: best === null ? -1 : best / max };
       });
     if (sort === 'weakest') return out.sort((a, b) => a.mastery - b.mastery);
     if (sort === 'longest') return out.sort((a, b) => b.seq.moves.length - a.seq.moves.length);
     if (sort === 'recent') return out.sort((a, b) => b.seq.createdAt - a.seq.createdAt);
     return out.sort((a, b) => a.seq.srs.due - b.seq.srs.due);
-  }, [sequences, allAttempts, sort, modeFilter, tagFilter]);
+  }, [blind, allAttempts, sort, tagFilter]);
 
   const dueNow = useMemo(() => sequences.filter(s => isDue(s.srs)).length, [sequences]);
 
@@ -98,8 +99,8 @@ export default function Sequences() {
         <div>
           <h1>Séquences</h1>
           <p className="sub">
-            Chaque séquence est un exercice. Les étiquettes servent à les regrouper —
-            et à filtrer ce que tu révises.
+            Les variations à rejouer de mémoire, à l'aveugle. Les coups à corriger sont
+            dans l'onglet Intuition.
           </p>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '.4rem', alignItems: 'center' }}>
@@ -127,17 +128,9 @@ export default function Sequences() {
         </div>
       </div>
 
-      {sequences.length > 0 && (
+      {blind.length > 0 && (
         <div className="card">
           <div className="row">
-            <div className="field" style={{ minWidth: 170 }}>
-              <label htmlFor="s-mode">Type</label>
-              <select id="s-mode" value={modeFilter} onChange={e => setModeFilter(e.target.value as ModeFilter)}>
-                <option value="all">Tous</option>
-                <option value="blind">{MODE_LABELS.blind}</option>
-                <option value="guess">{MODE_LABELS.guess}</option>
-              </select>
-            </div>
             <div className="field" style={{ minWidth: 150 }}>
               <label htmlFor="s-tag">Étiquette</label>
               <select id="s-tag" value={tagFilter} onChange={e => setTagFilter(e.target.value)}>
@@ -160,10 +153,10 @@ export default function Sequences() {
 
       {rows.length === 0 ? (
         <div className="empty">
-          {sequences.length === 0 ? (
+          {blind.length === 0 ? (
             <>
               Aucune séquence. Ouvre une partie de ta bibliothèque, avance jusqu'à la position
-              qui t'intéresse, puis clique sur « Enregistrer une séquence » ou « Deviner le coup ».
+              qui t'intéresse, puis clique sur « Enregistrer une séquence ».
             </>
           ) : (
             <>Aucune séquence avec ces filtres.</>
@@ -172,7 +165,7 @@ export default function Sequences() {
       ) : (
         <div className="list">
           {rows.map(({ seq, attempts, best, last, mastery }) => {
-            const max = seq.mode === 'guess' ? 1 : seq.moves.length;
+            const max = seq.moves.length;
             return (
               <div key={seq.id} className="item">
                 <input
@@ -209,7 +202,6 @@ export default function Sequences() {
                     <div className="title">{seq.name}</div>
                   )}
                   <div className="meta">
-                    <span className="tag accent">{MODE_LABELS[seq.mode]}</span>
                     <span>{seq.moves.length} coup{seq.moves.length > 1 ? 's' : ''}</span>
                     <span>{seq.timerSeconds}s</span>
                     <span className={isDue(seq.srs) ? 'tag jade' : ''}>{dueLabel(seq.srs.due)}</span>

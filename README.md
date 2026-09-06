@@ -9,9 +9,9 @@ Deux types d'exercice pour l'instant :
 
 - **Lecture à l'aveugle** — rejouer une séquence de mémoire : chaque pierre posée
   clignote puis disparaît, il faut tenir la position dans sa tête.
-- **Deviner le coup** — une position, quelques secondes, un seul coup, sans calculer.
-  Sur une partie plus forte que soi, le coup joué fait référence ; sur les siennes, on
-  désigne soi-même le coup qu'il fallait jouer, et le coup réel devient le contre-exemple.
+- **Coup à corriger** — une position, quelques secondes, un seul coup, sans calculer.
+  On désigne soi-même le coup qu'il fallait jouer, et celui joué dans la partie devient
+  le contre-exemple.
 
 ## Démarrer en local
 
@@ -28,8 +28,10 @@ pour ne rien perdre en changeant de machine.
 ## Pour essayer tout de suite
 
 À la première visite, une partie OGS réelle (90256275, *Drooxi 8k vs nobi-kun 8k*) et
-quatre exercices prêts à jouer sont installés automatiquement : deux séquences de lecture
-(**Milieu de partie**, **Combat du bas**) et deux devinettes tirées du même combat.
+deux séquences de lecture prêtes à jouer sont installées automatiquement : **Milieu de
+partie** et **Combat du bas**. Pas d'exercice « coup à corriger » : il faudrait désigner
+le coup qu'il fallait jouer, ce qui demande un jugement sur la partie qu'on ne peut pas
+inventer.
 
 Rien n'est écrasé si la bibliothèque contient déjà quelque chose, et le bouton « Exemple »
 de la page Parties les réinstalle à la demande.
@@ -46,9 +48,10 @@ du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 2. **Visionneuse** — navigue jusqu'à la position qui t'intéresse (flèches ← →,
    Maj pour 10 coups), puis « Enregistrer une séquence ». Pose la variation au clic,
    ou reprends les coups réellement joués avec « +1 / +5 coups de la partie ».
-   Le panneau latéral liste les exercices tirés de cette partie, dans l'ordre des
-   coups : « Voir » les affiche en transparence sur le plateau, et les cases à cocher
-   permettent d'en supprimer plusieurs d'un coup.
+   Sur un coup qu'on regrette, « Corriger le coup » ouvre la désignation de la bonne
+   réponse. Le panneau latéral liste les exercices tirés de cette partie, dans l'ordre
+   des coups : « Voir » les affiche en transparence sur le plateau, et les cases à
+   cocher permettent d'en supprimer plusieurs d'un coup.
 3. **Entraînement** — en lecture, la position de départ reste affichée mais pas la
    séquence : rejoue-la de mémoire. Un coup faux coûte 1 point et le bon coup t'est
    montré pour que tu puisses continuer. En devinette, la position n'apparaît qu'au
@@ -56,7 +59,7 @@ du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 4. **Réviser** — la file sert les exercices dus, du plus en retard au plus récent.
    Filtre par type ou par étiquette, ou ne filtre pas : tout mélangé, c'est le plus
    proche d'une vraie partie. Le compteur dans la barre du haut indique ce qui attend.
-5. **Intuition** — tous les exercices d'un coup au même endroit, enchaînés en série de
+5. **Intuition** — tous les coups à corriger au même endroit, enchaînés en série de
    10, 20 ou 50, au hasard ou en commençant par les moins sûrs. Ici on cherche le volume,
    pas l'échéance : la reconnaissance de formes se muscle par l'exposition, pas par la
    révision espacée. Taux de réussite global, filtres « jamais tentés » et « déjà ratés »,
@@ -88,7 +91,8 @@ src/
   components/ Goban.tsx (SVG, pierres permanentes / éphémères / fantômes)
               BlindDrill / GuessDrill : les moteurs d'exercice, Drill aiguille selon le mode
               GuessEditor : désigner la bonne réponse ; DrillSession : enchaîner une file
-  pages/      Library, GameViewer, Sequences, Trainer, Review, Intuition
+  pages/      Library, GameViewer, Trainer
+              Sequences (lecture à l'aveugle), Intuition (coups à corriger), Review
 ```
 
 Le moteur a été validé en rejouant intégralement une douzaine de parties OGS

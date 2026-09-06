@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Drill from '../components/Drill';
 import GuessEditor, { type GuessAnswer } from '../components/GuessEditor';
 import { useStore } from '../state/store';
-import { MODE_LABELS, type Attempt } from '../services/model';
+import { MODE_LABELS, MODE_TAG_CLASS, type Attempt } from '../services/model';
 import { dueLabel } from '../services/srs';
 
 export default function Trainer() {
@@ -92,7 +92,7 @@ export default function Trainer() {
         <div>
           <h1>{seq.name}</h1>
           <p className="sub">
-            <span className="tag accent">{MODE_LABELS[seq.mode]}</span>
+            <span className={MODE_TAG_CLASS[seq.mode]}>{MODE_LABELS[seq.mode]}</span>
             {' '}{seq.moves.length} coup{seq.moves.length > 1 ? 's' : ''} · {seq.timerSeconds}s
             {' '}· révision {dueLabel(seq.srs.due)}
             {seq.origin && (

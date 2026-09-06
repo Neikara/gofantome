@@ -109,6 +109,7 @@ label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .3
 }
 .tag.accent { background: var(--accent-soft); color: var(--accent); }
 .tag.jade { background: #143229; color: var(--jade); }
+.tag.iris { background: #1d2444; color: #9db4ff; }
 
 /* ---------- Goban ---------- */
 .goban { width: 100%; height: auto; display: block; border-radius: 8px; user-select: none; }
