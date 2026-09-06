@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { StoredGame, Sequence, Attempt } from '../services/model';
 import * as db from '../services/storage';
 import { buildDemoData, DEMO_GAME_ID, PREVIOUS_DEMO_GAME_IDS } from '../services/demo';
+import { quality, review } from '../services/srs';
 
 /** Pose une fois la demo installee, pour qu'elle ne revienne pas apres suppression. */
 const DEMO_FLAG = 'gofantome:demoSeeded';
@@ -15,9 +16,11 @@ interface State {
   addGame: (g: StoredGame) => Promise<void>;
   removeGame: (id: string) => Promise<void>;
   addSequence: (s: Sequence) => Promise<void>;
+  addSequences: (s: Sequence[]) => Promise<void>;
   updateSequence: (id: string, patch: Partial<Sequence>) => Promise<void>;
   removeSequence: (id: string) => Promise<void>;
-  addAttempt: (a: Attempt) => Promise<void>;
+  /** Enregistre l'essai et fait avancer l'échéance de la séquence. */
+  recordAttempt: (a: Attempt) => Promise<void>;
   reload: () => Promise<void>;
   /** (Re)charge la partie et les séquences de démonstration. */
   loadDemo: () => Promise<void>;
@@ -31,9 +34,12 @@ export const useStore = create<State>((set, get) => ({
 
   hydrate: async () => {
     if (get().ready) return;
-    const [games, sequences, attempts] = await Promise.all([
-      db.loadGames(), db.loadSequences(), db.loadAttempts(),
+    const [games, loaded, attempts] = await Promise.all([
+      db.loadGames(), db.loadSequencesMigrating(), db.loadAttempts(),
     ]);
+    const { sequences } = loaded;
+    // Des séquences d'avant les modes : on réécrit pour ne pas garder deux formats en base.
+    if (loaded.migrated) await db.saveSequences(sequences);
 
     // Première visite seulement : on installe la démo si l'utilisateur n'a rien à lui.
     const untouched = !games.length && !sequences.length && !localStorage.getItem(DEMO_FLAG);
@@ -67,10 +73,11 @@ export const useStore = create<State>((set, get) => ({
   },
 
   reload: async () => {
-    const [games, sequences, attempts] = await Promise.all([
-      db.loadGames(), db.loadSequences(), db.loadAttempts(),
+    const [games, loaded, attempts] = await Promise.all([
+      db.loadGames(), db.loadSequencesMigrating(), db.loadAttempts(),
     ]);
-    set({ games, sequences, attempts, ready: true });
+    if (loaded.migrated) await db.saveSequences(loaded.sequences);
+    set({ games, sequences: loaded.sequences, attempts, ready: true });
   },
 
   addGame: async (g) => {
@@ -91,6 +98,13 @@ export const useStore = create<State>((set, get) => ({
     await db.saveSequences(sequences);
   },
 
+  addSequences: async (batch) => {
+    if (!batch.length) return;
+    const sequences = [...batch, ...get().sequences];
+    set({ sequences });
+    await db.saveSequences(sequences);
+  },
+
   updateSequence: async (id, patch) => {
     const sequences = get().sequences.map(s => (s.id === id ? { ...s, ...patch } : s));
     set({ sequences });
@@ -104,9 +118,13 @@ export const useStore = create<State>((set, get) => ({
     await Promise.all([db.saveSequences(sequences), db.saveAttempts(attempts)]);
   },
 
-  addAttempt: async (a) => {
+  recordAttempt: async (a) => {
     const attempts = [a, ...get().attempts].slice(0, 2000);
-    set({ attempts });
-    await db.saveAttempts(attempts);
+    const now = a.at;
+    const sequences = get().sequences.map(s =>
+      s.id === a.seqId ? { ...s, srs: review(s.srs, quality(a.score, a.max), now) } : s,
+    );
+    set({ attempts, sequences });
+    await Promise.all([db.saveAttempts(attempts), db.saveSequences(sequences)]);
   },
 }));

@@ -52,6 +52,11 @@ p { margin: 0 0 .75rem; }
 }
 .nav a:hover { background: var(--bg-3); color: var(--text); }
 .nav a.active { background: var(--accent-soft); color: var(--accent); }
+.nav-badge {
+  display: inline-block; margin-left: .35rem; padding: 0 .35rem;
+  border-radius: 999px; background: var(--jade); color: #05201a;
+  font-size: .72rem; font-weight: 700; vertical-align: text-top;
+}
 
 .page { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
 .page-head { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }

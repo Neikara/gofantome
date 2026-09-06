@@ -28,6 +28,28 @@ export interface SeqMove {
   color: Color;
 }
 
+/**
+ * Comment un exercice est restitué. Le contenu ne suffit pas à le décrire : la même
+ * position travaille la lecture ou l'intuition selon la façon dont on la sert.
+ */
+export type DrillMode = 'blind' | 'guess';
+
+export const MODE_LABELS: Record<DrillMode, string> = {
+  blind: 'Lecture à l’aveugle',
+  guess: 'Deviner le coup',
+};
+
+/** État de répétition espacée. Voir srs.ts pour la mécanique. */
+export interface SrsState {
+  /** Prochaine échéance (timestamp). */
+  due: number;
+  intervalDays: number;
+  /** Facteur SM-2, plancher 1.3. */
+  ease: number;
+  reps: number;
+  lapses: number;
+}
+
 export interface Sequence {
   id: string;
   name: string;
@@ -43,13 +65,23 @@ export interface Sequence {
   /** Durée d'affichage d'une pierre posée, en ms. */
   flashMs: number;
   notes?: string;
+  mode: DrillMode;
+  /** Classes libres et cumulables : « pince », « hoshi », « mon répertoire »… */
+  tags: string[];
+  srs: SrsState;
+  /**
+   * Réponses supplémentaires acceptées au premier coup, pour « deviner le coup ».
+   * Vide tant qu'on ne lit pas les coups suggérés par KataGo.
+   */
+  accept?: number[];
 }
 
 export interface Attempt {
   id: string;
   seqId: string;
+  mode: DrillMode;
   at: number;
-  /** moves.length - errors */
+  /** Nombre de coups joués juste : les coups jamais atteints ne comptent pas. */
   score: number;
   max: number;
   errors: number;
@@ -65,3 +97,9 @@ export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().to
 
 /** Temps par défaut : généreux au début de la séquence, resserré ensuite. */
 export const defaultTimer = (moveCount: number) => Math.max(15, Math.round(moveCount * 4));
+
+/**
+ * Une devinette doit se jouer à l'instinct : laisser le temps de calculer reviendrait
+ * à travailler la lecture, pas l'intuition.
+ */
+export const GUESS_TIMER_SECONDS = 5;

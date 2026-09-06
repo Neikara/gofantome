@@ -6,7 +6,8 @@ import { buildReplay, turnAfter } from '../core/replay';
 import { play } from '../core/board';
 import { indexToLabel } from '../core/coords';
 import type { Color, Position } from '../core/types';
-import { defaultTimer, uid, type SeqMove } from '../services/model';
+import { defaultTimer, uid, GUESS_TIMER_SECONDS, type SeqMove, type Sequence } from '../services/model';
+import { newSrs } from '../services/srs';
 
 interface Recording {
   /** Coup de la partie à partir duquel la séquence commence. */
@@ -25,6 +26,7 @@ export default function GameViewer() {
   // Le selecteur doit renvoyer une reference stable : on filtre en dehors du store.
   const allSequences = useStore(s => s.sequences);
   const addSequence = useStore(s => s.addSequence);
+  const addSequences = useStore(s => s.addSequences);
   const sequences = useMemo(
     () => allSequences.filter(s2 => s2.origin?.gameId === gameId),
     [allSequences, gameId],
@@ -37,6 +39,9 @@ export default function GameViewer() {
   const [name, setName] = useState('');
   const [timer, setTimer] = useState(30);
   const [flashMs, setFlashMs] = useState(400);
+  const [guessColor, setGuessColor] = useState<'both' | 'black' | 'white'>('both');
+  const [guessCount, setGuessCount] = useState(5);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const replay = useMemo(() => {
     if (!game) return null;
@@ -64,6 +69,12 @@ export default function GameViewer() {
     const t = setTimeout(() => setProblem(null), 2500);
     return () => clearTimeout(t);
   }, [problem]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 8000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   // En enregistrement, on numérote les coups de la séquence sur le plateau.
   const markers = useMemo(() => {
@@ -176,29 +187,70 @@ export default function GameViewer() {
     setRec({ ...rec, moves, positions });
   };
 
-  const save = async () => {
-    if (!rec || !rec.moves.length) return;
-    const start = replay.positions[rec.startAt];
+  /** Sépare les pierres d'une position en deux listes d'indices. */
+  const splitStones = (at: number) => {
+    const start = replay.positions[at];
     const black: number[] = [];
     const white: number[] = [];
     for (let i = 0; i < start.stones.length; i++) {
       if (start.stones[i] === 1) black.push(i);
       else if (start.stones[i] === 2) white.push(i);
     }
+    return { black, white };
+  };
+
+  const save = async () => {
+    if (!rec || !rec.moves.length) return;
     const seqId = uid();
     await addSequence({
       id: seqId,
       name: name.trim() || `${gameLabel} — coup ${rec.startAt + 1}`,
       createdAt: Date.now(),
       size,
-      setup: { black, white },
+      setup: splitStones(rec.startAt),
       moves: rec.moves,
       origin: { gameId, gameLabel, moveNumber: rec.startAt },
       timerSeconds: timer,
       flashMs,
+      mode: 'blind',
+      tags: [],
+      srs: newSrs(),
     });
     setRec(null);
     navigate(`/train/${seqId}`);
+  };
+
+  /**
+   * Crée des exercices « deviner le coup » à partir des coups réellement joués.
+   * Aucune IA nécessaire : dans une partie de joueur fort, le coup joué est la référence.
+   */
+  const createGuesses = async (count: number) => {
+    const created: Sequence[] = [];
+    const now = Date.now();
+    for (let at = cursor; at < total && created.length < count; at++) {
+      const mv = replay.moves[at];
+      // On ne fait pas deviner un pass, et on respecte la couleur demandée.
+      if (mv.point === null) continue;
+      if (guessColor !== 'both' && mv.color !== (guessColor === 'black' ? 1 : 2)) continue;
+      created.push({
+        id: uid(),
+        name: `${gameLabel} — coup ${at + 1}`,
+        createdAt: now - created.length,
+        size,
+        setup: splitStones(at),
+        moves: [{ point: mv.point, color: mv.color }],
+        origin: { gameId, gameLabel, moveNumber: at },
+        timerSeconds: GUESS_TIMER_SECONDS,
+        flashMs: 400,
+        mode: 'guess',
+        tags: [],
+        srs: newSrs(now),
+      });
+    }
+    if (!created.length) { setProblem('Aucun coup à transformer en devinette ici.'); return; }
+    await addSequences(created);
+    if (created.length === 1) navigate(`/train/${created[0].id}`);
+    else setNotice(`${created.length} devinettes créées, prêtes dans la file de révision.`);
   };
 
   return (
@@ -267,6 +319,11 @@ export default function GameViewer() {
           )}
 
           {problem && <div className="banner bad" style={{ marginTop: '.7rem' }}>{problem}</div>}
+          {notice && (
+            <div className="banner ok" style={{ marginTop: '.7rem' }}>
+              {notice} <Link to="/review">Réviser maintenant</Link>
+            </div>
+          )}
         </div>
 
         <aside>
@@ -281,6 +338,42 @@ export default function GameViewer() {
                 <button className="primary" onClick={startRecording} style={{ width: '100%' }}>
                   Enregistrer depuis le coup {cursor}
                 </button>
+              </div>
+
+              <div className="card">
+                <h3>Deviner le coup</h3>
+                <p className="small muted">
+                  Le coup réellement joué devient la réponse. À faire sur les parties de
+                  joueurs plus forts que toi : c'est leur intuition que tu copies.
+                </p>
+                <div className="row">
+                  <div className="field grow" style={{ minWidth: 90 }}>
+                    <label htmlFor="g-count">Combien</label>
+                    <input
+                      id="g-count" type="number" min={1} max={50} value={guessCount}
+                      onChange={e => setGuessCount(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="field grow" style={{ minWidth: 110 }}>
+                    <label htmlFor="g-color">Coups de</label>
+                    <select
+                      id="g-color" value={guessColor}
+                      onChange={e => setGuessColor(e.target.value as typeof guessColor)}
+                    >
+                      <option value="both">Les deux</option>
+                      <option value="black">Noir</option>
+                      <option value="white">Blanc</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="row">
+                  <button className="grow" onClick={() => void createGuesses(1)} disabled={cursor >= total}>
+                    Ce coup seul
+                  </button>
+                  <button className="primary grow" onClick={() => void createGuesses(guessCount)} disabled={cursor >= total}>
+                    Créer {guessCount}
+                  </button>
+                </div>
               </div>
 
               {cursor > 0 && replay.moves[cursor - 1].comment && (

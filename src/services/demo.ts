@@ -1,5 +1,7 @@
 import { buildReplay } from '../core/replay';
-import type { Sequence, StoredGame } from './model';
+import type { DrillMode, Sequence, StoredGame } from './model';
+import { GUESS_TIMER_SECONDS } from './model';
+import { newSrs } from './srs';
 
 /**
  * Données de démonstration : une vraie partie OGS et deux séquences prêtes à jouer,
@@ -26,6 +28,8 @@ interface DemoSpec {
   length: number;
   timerSeconds: number;
   notes: string;
+  mode: DrillMode;
+  tags: string[];
 }
 
 const SPECS: DemoSpec[] = [
@@ -35,6 +39,8 @@ const SPECS: DemoSpec[] = [
     startAt: 100,
     length: 6,
     timerSeconds: 30,
+    mode: 'blind',
+    tags: ['milieu de partie'],
     notes: "Six coups qui sautent d'une zone du plateau à l'autre. Il n'y a pas de contour "
       + "local auquel s'accrocher : c'est le cas le plus dur à tenir de tête, et le plus utile à travailler.",
   },
@@ -44,8 +50,32 @@ const SPECS: DemoSpec[] = [
     startAt: 108,
     length: 8,
     timerSeconds: 40,
+    mode: 'blind',
+    tags: ['combat'],
     notes: 'Huit coups groupés dans le bas du plateau : un contact serré, plus facile à situer. '
       + "Commence par celle-ci pour prendre le pli de l'exercice.",
+  },
+  {
+    id: 'demo-guess-1',
+    name: 'Réponse au contact (coup 110)',
+    startAt: 109,
+    length: 1,
+    timerSeconds: GUESS_TIMER_SECONDS,
+    mode: 'guess',
+    tags: ['combat', 'intuition'],
+    notes: "Un seul coup, cinq secondes, sans calculer. Dans un contact serré la réponse est "
+      + "souvent forcée : c'est exactement ce que l'intuition doit reconnaître d'un coup d'œil.",
+  },
+  {
+    id: 'demo-guess-2',
+    name: 'Suite du contact (coup 114)',
+    startAt: 113,
+    length: 1,
+    timerSeconds: GUESS_TIMER_SECONDS,
+    mode: 'guess',
+    tags: ['combat', 'intuition'],
+    notes: 'Même combat, quatre coups plus loin. La référence est le coup réellement joué '
+      + "dans la partie — il peut exister d'autres bons coups.",
   },
 ];
 
@@ -99,6 +129,9 @@ export function buildDemoData(): { game: StoredGame; sequences: Sequence[] } {
       timerSeconds: spec.timerSeconds,
       flashMs: 400,
       notes: spec.notes,
+      mode: spec.mode,
+      tags: spec.tags,
+      srs: newSrs(now),
     } satisfies Sequence;
   });
 
