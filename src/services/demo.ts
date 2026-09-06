@@ -1,4 +1,5 @@
-import { buildReplay } from '../core/replay';
+import { buildReplay, turnAfter } from '../core/replay';
+import { labelToIndex } from '../core/coords';
 import type { DrillMode, Sequence, StoredGame } from './model';
 import { newSrs } from './srs';
 
@@ -27,24 +28,31 @@ interface DemoSpec {
   name: string;
   /** Nombre de coups joués avant le début de la séquence. */
   startAt: number;
-  length: number;
   timerSeconds: number;
   notes: string;
   mode: DrillMode;
   tags: string[];
+  /** Tranche de la ligne principale : les `length` coups suivants tels que joués. */
+  length?: number;
+  /**
+   * Ou variation lue hors partie, en coordonnées lisibles (« H15 »). Les couleurs
+   * alternent à partir de celle qui a le trait à `startAt`.
+   */
+  moves?: string[];
 }
 
 const SPECS: DemoSpec[] = [
   {
     id: 'demo-milieu',
-    name: 'Milieu de partie',
+    name: 'Combat du haut',
     startAt: 100,
-    length: 6,
-    timerSeconds: 30,
+    timerSeconds: 45,
     mode: 'blind',
     tags: ['milieu de partie'],
-    notes: "Six coups qui sautent d'une zone du plateau à l'autre. Il n'y a pas de contour "
-      + "local auquel s'accrocher : c'est le cas le plus dur à tenir de tête, et le plus utile à travailler.",
+    // Variation lue en analyse : elle part du vrai coup 101 puis quitte la partie.
+    moves: ['H15', 'G18', 'F18', 'H18', 'F15', 'G14', 'G13', 'F14', 'D15', 'F13'],
+    notes: "Dix coups d'affilée dans le combat du haut. Ce n'est pas la suite jouée dans "
+      + "la partie mais une variation lue en analyse : il n'y a rien à reconnaître, tout à tenir de tête.",
   },
   {
     id: 'demo-bas',
@@ -58,6 +66,28 @@ const SPECS: DemoSpec[] = [
       + "Commence par celle-ci pour prendre le pli de l'exercice.",
   },
 ];
+
+/**
+ * Coups d'un exercice : soit la suite réellement jouée, soit une variation écrite en
+ * clair. Une coordonnée illisible est une faute de frappe dans ce fichier, pas une
+ * donnée douteuse : on la signale plutôt que de produire un exercice faux.
+ */
+function specMoves(spec: DemoSpec, replay: ReturnType<typeof buildReplay>) {
+  const size = replay.info.size;
+  if (!spec.moves) {
+    return replay.moves
+      .slice(spec.startAt, spec.startAt + (spec.length ?? 0))
+      .map(m => ({ point: m.point, color: m.color }));
+  }
+  let color = turnAfter(replay, spec.startAt);
+  return spec.moves.map(label => {
+    const point = labelToIndex(label, size);
+    if (point === null) throw new Error(`Coordonnée illisible dans la démo : « ${label} ».`);
+    const move = { point, color };
+    color = color === 1 ? 2 : 1;
+    return move;
+  });
+}
 
 /** Reconstruit la partie et les séquences depuis le SGF, sans coordonnées écrites en dur. */
 export function buildDemoData(): { game: StoredGame; sequences: Sequence[] } {
@@ -103,9 +133,7 @@ export function buildDemoData(): { game: StoredGame; sequences: Sequence[] } {
       size: info.size,
       setup: { black, white },
       lastMove: spec.startAt > 0 ? replay.moves[spec.startAt - 1].point : null,
-      moves: replay.moves
-        .slice(spec.startAt, spec.startAt + spec.length)
-        .map(m => ({ point: m.point, color: m.color })),
+      moves: specMoves(spec, replay),
       origin: { gameId: DEMO_GAME_ID, gameLabel, moveNumber: spec.startAt },
       timerSeconds: spec.timerSeconds,
       flashMs: 400,

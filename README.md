@@ -30,16 +30,18 @@ pour ne rien perdre en changeant de machine.
 ## Pour essayer tout de suite
 
 À la première visite, une partie OGS réelle (90256275, *Drooxi 8k vs nobi-kun 8k*) et
-deux séquences de lecture prêtes à jouer sont installées automatiquement : **Milieu de
-partie** et **Combat du bas**. Pas d'exercice « coup à corriger » : il faudrait désigner
+deux séquences de lecture prêtes à jouer sont installées automatiquement : **Combat du
+haut** — une variation lue en analyse, qui quitte la partie après son premier coup — et
+**Combat du bas**, huit coups réellement joués. Pas d'exercice « coup à corriger » : il faudrait désigner
 le coup qu'il fallait jouer, ce qui demande un jugement sur la partie qu'on ne peut pas
 inventer.
 
 Rien n'est écrasé si la bibliothèque contient déjà quelque chose, et le bouton « Exemple »
 de la page Parties les réinstalle à la demande.
 
-Les exercices sont dérivés du SGF au chargement — aucune coordonnée n'est écrite en dur
-dans [demo.ts](src/services/demo.ts). Les commentaires de chat de la partie ont été retirés
+Les exercices sont décrits dans [demo.ts](src/services/demo.ts) par un point de départ
+(`startAt`) et soit une longueur (`length`, tranche de la partie), soit une variation en
+coordonnées lisibles (`moves`). Position, couleurs et dernier coup sont dérivés du SGF. Les commentaires de chat de la partie ont été retirés
 du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 
 ## Le parcours
