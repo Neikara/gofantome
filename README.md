@@ -20,14 +20,18 @@ pour ne rien perdre en changeant de machine.
 
 ## Pour essayer tout de suite
 
-À la première visite, une partie OGS réelle (11303468, *dorota 6k vs crodnu 1k*) et deux
-séquences prêtes à jouer sont installées automatiquement : **Combat au centre** (6 coups au
-milieu du plateau, sans repère de bord) et **Joseki du coin inférieur gauche** (8 coups, plus
-facile à situer). Rien n'est écrasé si la bibliothèque contient déjà quelque chose, et le
-bouton « Exemple » de la page Parties les réinstalle à la demande.
+À la première visite, une partie OGS réelle (90256275, *Drooxi 8k vs nobi-kun 8k*) et deux
+séquences prêtes à jouer sont installées automatiquement :
+
+- **Milieu de partie** — 6 coups à partir du coup 100, dispersés sur le plateau ;
+- **Combat du bas** — 8 coups groupés, plus faciles à situer.
+
+Rien n'est écrasé si la bibliothèque contient déjà quelque chose, et le bouton « Exemple »
+de la page Parties les réinstalle à la demande.
 
 Les séquences sont dérivées du SGF au chargement — aucune coordonnée n'est écrite en dur
-dans [demo.ts](src/services/demo.ts).
+dans [demo.ts](src/services/demo.ts). Les commentaires de chat de la partie ont été retirés
+du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 
 ## Le parcours
 

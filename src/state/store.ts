@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { StoredGame, Sequence, Attempt } from '../services/model';
 import * as db from '../services/storage';
-import { buildDemoData } from '../services/demo';
+import { buildDemoData, DEMO_GAME_ID, PREVIOUS_DEMO_GAME_IDS } from '../services/demo';
 
 /** Pose une fois la demo installee, pour qu'elle ne revienne pas apres suppression. */
 const DEMO_FLAG = 'gofantome:demoSeeded';
@@ -54,9 +54,13 @@ export const useStore = create<State>((set, get) => ({
 
   loadDemo: async () => {
     const demo = buildDemoData();
-    const games = [demo.game, ...get().games.filter(g => g.id !== demo.game.id)];
-    const demoIds = new Set(demo.sequences.map(s => s.id));
-    const sequences = [...demo.sequences, ...get().sequences.filter(s => !demoIds.has(s.id))];
+    // On remplace la démo précédente, sans toucher à ce que l'utilisateur a créé.
+    const obsolete = new Set([DEMO_GAME_ID, ...PREVIOUS_DEMO_GAME_IDS]);
+    const games = [demo.game, ...get().games.filter(g => !obsolete.has(g.id))];
+    const sequences = [
+      ...demo.sequences,
+      ...get().sequences.filter(s => !s.id.startsWith('demo-')),
+    ];
     localStorage.setItem(DEMO_FLAG, '1');
     set({ games, sequences });
     await Promise.all([db.saveGames(games), db.saveSequences(sequences)]);
