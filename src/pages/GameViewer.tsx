@@ -51,6 +51,12 @@ export default function GameViewer() {
   const [fix, setFix] = useState<null | { at: number; answer: number | null; accept: number[] }>(null);
   /** Exercices cochés dans le panneau latéral, pour une suppression groupée. */
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  /**
+   * Aperçu d'un exercice sur le plateau. On mémorise la position à laquelle il se
+   * rattache : dès que l'utilisateur navigue ailleurs, l'aperçu cesse de correspondre
+   * et disparaît de lui-même, sans avoir à l'effacer depuis chaque commande.
+   */
+  const [preview, setPreview] = useState<{ id: string; at: number } | null>(null);
 
   const replay = useMemo(() => {
     if (!game) return null;
@@ -144,6 +150,35 @@ export default function GameViewer() {
         ...fix.accept.map(pt => ({ point: pt, color: fixColor, label: '+', tone: 'good' as const })),
         ...(fixMove?.point !== null && fixMove?.point !== undefined && fixMove.point !== fix.answer
           ? [{ point: fixMove.point, color: fixColor, label: '✗', tone: 'bad' as const }]
+          : []),
+      ]
+    : [];
+
+  /** Coups de l'exercice prévisualisé, en transparence sur la position de départ. */
+  const previewSeq = preview && preview.at === cursor
+    ? sequences.find(s2 => s2.id === preview.id)
+    : undefined;
+  const previewGhosts = previewSeq
+    ? [
+        ...previewSeq.moves
+          .filter(m => m.point !== null)
+          .map((m, i) => ({
+            point: m.point as number,
+            color: m.color,
+            label: previewSeq.moves.length > 1 ? i + 1 : '✓',
+            tone: previewSeq.moves.length > 1 ? undefined : ('good' as const),
+          })),
+        ...(previewSeq.accept ?? []).map(pt => ({
+          point: pt, color: previewSeq.moves[0]?.color ?? 1, label: '+', tone: 'good' as const,
+        })),
+        ...(previewSeq.playedInGame !== null && previewSeq.playedInGame !== undefined
+            && previewSeq.playedInGame !== previewSeq.moves[0]?.point
+          ? [{
+              point: previewSeq.playedInGame,
+              color: previewSeq.moves[0]?.color ?? 1,
+              label: '✗',
+              tone: 'bad' as const,
+            }]
           : []),
       ]
     : [];
@@ -332,7 +367,7 @@ export default function GameViewer() {
               size={size}
               stones={displayed.stones}
               markers={markers}
-              ghosts={fixGhosts}
+              ghosts={fix ? fixGhosts : previewGhosts}
               lastMove={lastMove}
               cursor={rec ? nextColor : fix ? fixColor : null}
               onPoint={rec || fix ? onPoint : undefined}
@@ -374,7 +409,9 @@ export default function GameViewer() {
                 style={{ marginTop: '.6rem', padding: 0 }}
               />
               <p className="small muted" style={{ textAlign: 'center', marginTop: '.4rem' }}>
-                Flèches ← → pour naviguer (Maj pour 10 coups).
+                {previewSeq
+                  ? `Aperçu de « ${previewSeq.name} » — navigue pour le masquer.`
+                  : 'Flèches ← → pour naviguer (Maj pour 10 coups).'}
               </p>
             </>
           ) : (
@@ -545,7 +582,16 @@ export default function GameViewer() {
                           </div>
                         </div>
                         <div className="actions">
-                          <button className="sm" onClick={() => setCursor(s.origin?.moveNumber ?? 0)}>Voir</button>
+                          <button
+                            className={`sm ${previewSeq?.id === s.id ? 'primary' : ''}`}
+                            onClick={() => {
+                              const at = s.origin?.moveNumber ?? 0;
+                              setCursor(at);
+                              setPreview(previewSeq?.id === s.id ? null : { id: s.id, at });
+                            }}
+                          >
+                            {previewSeq?.id === s.id ? 'Masquer' : 'Voir'}
+                          </button>
                           <Link className="btn sm primary" to={`/train/${s.id}`}>Jouer</Link>
                         </div>
                       </div>

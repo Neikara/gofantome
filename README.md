@@ -46,6 +46,9 @@ du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 2. **Visionneuse** — navigue jusqu'à la position qui t'intéresse (flèches ← →,
    Maj pour 10 coups), puis « Enregistrer une séquence ». Pose la variation au clic,
    ou reprends les coups réellement joués avec « +1 / +5 coups de la partie ».
+   Le panneau latéral liste les exercices tirés de cette partie, dans l'ordre des
+   coups : « Voir » les affiche en transparence sur le plateau, et les cases à cocher
+   permettent d'en supprimer plusieurs d'un coup.
 3. **Entraînement** — en lecture, la position de départ reste affichée mais pas la
    séquence : rejoue-la de mémoire. Un coup faux coûte 1 point et le bon coup t'est
    montré pour que tu puisses continuer. En devinette, la position n'apparaît qu'au
