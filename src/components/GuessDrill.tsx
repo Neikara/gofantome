@@ -24,7 +24,7 @@ function setupStones(seq: Sequence): Uint8Array {
  * le temps de calculer, et on travaillerait la lecture au lieu de l'intuition.
  */
 export default function GuessDrill({
-  sequence: seq, onFinish, best = null, aside, afterActions, autoStart = false,
+  sequence: seq, onFinish, best = null, lastMove = null, aside, afterActions, autoStart = false,
 }: DrillProps) {
   // autoStart : la file de révision enchaîne les exercices, on ne repasse pas par le briefing.
   const [phase, setPhase] = useState<Phase>(autoStart ? 'countdown' : 'brief');
@@ -167,6 +167,7 @@ export default function GuessDrill({
                 ? [{ point: seq.playedInGame, color: expected.color, label: '✗', tone: 'bad' as const }]
                 : []),
             ] : []}
+            lastMove={hidden ? null : lastMove}
             cursor={phase === 'playing' && expected ? expected.color : null}
             onPoint={phase === 'playing' ? answer : undefined}
             muted={phase === 'done'}

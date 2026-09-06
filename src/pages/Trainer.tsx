@@ -5,18 +5,23 @@ import GuessEditor, { type GuessAnswer } from '../components/GuessEditor';
 import { useStore } from '../state/store';
 import { MODE_LABELS, MODE_TAG_CLASS, type Attempt } from '../services/model';
 import { dueLabel } from '../services/srs';
+import { resolveLastMove } from '../services/exercise';
 
 export default function Trainer() {
   const { id = '' } = useParams();
   const seq = useStore(s => s.sequences.find(x => x.id === id));
   // Filtrer dans le sélecteur créerait un nouveau tableau à chaque rendu.
   const allAttempts = useStore(s => s.attempts);
+  const games = useStore(s => s.games);
   const recordAttempt = useStore(s => s.recordAttempt);
   const updateSequence = useStore(s => s.updateSequence);
   const attempts = useMemo(() => allAttempts.filter(a => a.seqId === id), [allAttempts, id]);
   const [editing, setEditing] = useState(false);
 
   const onFinish = useCallback((a: Attempt) => { void recordAttempt(a); }, [recordAttempt]);
+
+  // Les exercices d'avant ce champ n'ont pas de dernier coup : on le retrouve dans la partie.
+  const lastMove = useMemo(() => (seq ? resolveLastMove(seq, games) : null), [seq, games]);
 
   // Position de départ de l'exercice, reconstruite pour l'éditeur de réponse.
   const stones = useMemo(() => {
@@ -131,7 +136,7 @@ export default function Trainer() {
           </div>
         </>
       ) : (
-        <Drill key={seq.id} sequence={seq} onFinish={onFinish} best={best} aside={settings} />
+        <Drill key={seq.id} sequence={seq} onFinish={onFinish} best={best} lastMove={lastMove} aside={settings} />
       )}
     </main>
   );

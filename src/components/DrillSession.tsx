@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import Drill from './Drill';
 import { useStore } from '../state/store';
 import { MODE_LABELS, type Attempt } from '../services/model';
+import { resolveLastMove } from '../services/exercise';
 
 interface Props {
   /** File figée par l'appelant : elle ne doit pas bouger sous les pieds de l'utilisateur. */
@@ -20,6 +21,7 @@ interface Props {
  */
 export default function DrillSession({ ids, onFinished, onQuit, label }: Props) {
   const sequences = useStore(s => s.sequences);
+  const games = useStore(s => s.games);
   const recordAttempt = useStore(s => s.recordAttempt);
 
   const [index, setIndex] = useState(0);
@@ -27,6 +29,10 @@ export default function DrillSession({ ids, onFinished, onQuit, label }: Props) 
 
   const byId = useMemo(() => new Map(sequences.map(s => [s.id, s])), [sequences]);
   const current = byId.get(ids[index]);
+  const lastMove = useMemo(
+    () => (current ? resolveLastMove(current, games) : null),
+    [current, games],
+  );
 
   const onFinish = useCallback((a: Attempt) => {
     void recordAttempt(a);
@@ -85,6 +91,7 @@ export default function DrillSession({ ids, onFinished, onQuit, label }: Props) 
         key={current.id}
         sequence={current}
         onFinish={onFinish}
+        lastMove={lastMove}
         autoStart
         aside={progress}
         afterActions={

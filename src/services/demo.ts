@@ -102,6 +102,7 @@ export function buildDemoData(): { game: StoredGame; sequences: Sequence[] } {
       createdAt: now - i * 1000,
       size: info.size,
       setup: { black, white },
+      lastMove: spec.startAt > 0 ? replay.moves[spec.startAt - 1].point : null,
       moves: replay.moves
         .slice(spec.startAt, spec.startAt + spec.length)
         .map(m => ({ point: m.point, color: m.color })),

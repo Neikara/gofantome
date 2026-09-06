@@ -8,7 +8,9 @@ des exercices, et une file de révision unique décide quoi retravailler et quan
 Deux types d'exercice pour l'instant :
 
 - **Lecture à l'aveugle** — rejouer une séquence de mémoire : chaque pierre posée
-  clignote puis disparaît, il faut tenir la position dans sa tête.
+  clignote puis disparaît, il faut tenir la position dans sa tête. Une seule erreur perd
+  l'essai — une séquence tenue à moitié ne se joue pas sur un goban — et la séquence
+  s'affiche alors en entier, numérotée, pour qu'on la reprenne du début.
 - **Coup à corriger** — une position, quelques secondes, un seul coup, sans calculer.
   On désigne soi-même le coup qu'il fallait jouer, et celui joué dans la partie devient
   le contre-exemple.
@@ -52,10 +54,11 @@ du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
    réponse. Le panneau latéral liste les exercices tirés de cette partie, dans l'ordre
    des coups : « Voir » les affiche en transparence sur le plateau, et les cases à
    cocher permettent d'en supprimer plusieurs d'un coup.
-3. **Entraînement** — en lecture, la position de départ reste affichée mais pas la
-   séquence : rejoue-la de mémoire. Un coup faux coûte 1 point et le bon coup t'est
-   montré pour que tu puisses continuer. En devinette, la position n'apparaît qu'au
-   départ du chrono, et tu réponds d'un seul clic.
+3. **Entraînement** — en lecture, la position de départ reste affichée (dernier coup
+   joué marqué) mais pas la séquence : rejoue-la de mémoire. La première erreur met fin
+   à l'essai. Dans les deux cas — réussi ou raté — la séquence est ensuite dévoilée sur
+   le plateau, numérotée dans l'ordre, avec ton coup fautif marqué ✗. Pour un coup à
+   corriger, la position n'apparaît qu'au départ du chrono et tu réponds d'un seul clic.
 4. **Réviser** — la file sert les exercices dus, du plus en retard au plus récent.
    Filtre par type ou par étiquette, ou ne filtre pas : tout mélangé, c'est le plus
    proche d'une vraie partie. Le compteur dans la barre du haut indique ce qui attend.
@@ -67,10 +70,12 @@ du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 
 ### Répétition espacée
 
-Chaque exercice porte une échéance. Le score de l'essai (`score / max`) sert de note,
-sans rien à saisir : une réussite éloigne la prochaine révision (1 jour, 3 jours, puis
-un intervalle multiplié par la facilité, plafonné à un an), une réussite laborieuse
-l'éloigne moins, un échec ramène à demain. L'algorithme est un SM-2 simplifié, isolé
+Chaque exercice porte une échéance. Le score de l'essai sert de note, sans rien à
+saisir : une réussite éloigne la prochaine révision (1 jour, 3 jours, puis un intervalle
+multiplié par la facilité, plafonné à un an), un échec ramène à demain. Un essai
+interrompu ou fautif reste sous le seuil de réussite même s'il s'est arrêté près de la
+fin : aller au coup 7 sur 8 se voit dans le score, mais ne fait pas passer la séquence
+pour acquise. L'algorithme est un SM-2 simplifié, isolé
 dans [srs.ts](src/services/srs.ts) et testable sans attendre de vrais jours.
 
 Deux réglages par séquence, ajustables à tout moment depuis l'écran d'entraînement :

@@ -85,6 +85,11 @@ export interface Sequence {
    */
   accept?: number[];
   /**
+   * Dernier coup joué avant le début de l'exercice. Sans lui, la position de départ
+   * est illisible : on ne sait pas d'où vient le combat ni qui vient de jouer où.
+   */
+  lastMove?: number | null;
+  /**
    * Le coup réellement joué dans la partie, quand il n'est PAS la bonne réponse.
    * C'est le cas dès qu'on fabrique un exercice à partir de sa propre erreur : la
    * référence devient le coup qu'on aurait dû jouer, et celui-ci sert de contraste

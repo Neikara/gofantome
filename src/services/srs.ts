@@ -84,6 +84,18 @@ export function review(srs: SrsState, quality: number, now: number = Date.now())
 /** Qualité d'un essai : la part de coups réussis. */
 export const quality = (score: number, max: number) => (max > 0 ? clamp(score / max, 0, 1) : 0);
 
+/**
+ * Qualité d'un essai pour la planification.
+ *
+ * Un exercice raté ou interrompu ne peut pas compter comme acquis, même si l'essai
+ * s'est arrêté près de la fin : la note reste sous le seuil de réussite, tout en
+ * gardant la progression (aller au coup 7 sur 8 vaut mieux que se tromper au premier).
+ */
+export function attemptQuality(a: { score: number; max: number; errors: number; timedOut: boolean }) {
+  const raw = quality(a.score, a.max);
+  return a.errors > 0 || a.timedOut ? Math.min(raw, PASS - 0.1) : raw;
+}
+
 export const isDue = (srs: SrsState, now: number = Date.now()) => srs.due <= now;
 
 /** Échéance en clair, pour l'interface. */

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { StoredGame, Sequence, Attempt } from '../services/model';
 import * as db from '../services/storage';
 import { buildDemoData, DEMO_GAME_ID, PREVIOUS_DEMO_GAME_IDS } from '../services/demo';
-import { quality, review } from '../services/srs';
+import { attemptQuality, review } from '../services/srs';
 
 /** Pose une fois la demo installee, pour qu'elle ne revienne pas apres suppression. */
 const DEMO_FLAG = 'gofantome:demoSeeded';
@@ -129,7 +129,7 @@ export const useStore = create<State>((set, get) => ({
     const attempts = [a, ...get().attempts].slice(0, 2000);
     const now = a.at;
     const sequences = get().sequences.map(s =>
-      s.id === a.seqId ? { ...s, srs: review(s.srs, quality(a.score, a.max), now) } : s,
+      s.id === a.seqId ? { ...s, srs: review(s.srs, attemptQuality(a), now) } : s,
     );
     set({ attempts, sequences });
     await Promise.all([db.saveAttempts(attempts), db.saveSequences(sequences)]);
