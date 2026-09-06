@@ -6,7 +6,7 @@ import { buildReplay, turnAfter } from '../core/replay';
 import { play } from '../core/board';
 import { indexToLabel } from '../core/coords';
 import type { Color, Position } from '../core/types';
-import { defaultTimer, uid, GUESS_TIMER_SECONDS, type SeqMove, type Sequence } from '../services/model';
+import { defaultTimer, uid, GUESS_TIMER_SECONDS, MODE_LABELS, type SeqMove, type Sequence } from '../services/model';
 import { newSrs } from '../services/srs';
 
 interface Recording {
@@ -27,8 +27,13 @@ export default function GameViewer() {
   const allSequences = useStore(s => s.sequences);
   const addSequence = useStore(s => s.addSequence);
   const addSequences = useStore(s => s.addSequences);
+  const removeSequences = useStore(s => s.removeSequences);
+  // Triés par numéro de coup : dans une partie, on se repère par la position, pas par
+  // la date de création.
   const sequences = useMemo(
-    () => allSequences.filter(s2 => s2.origin?.gameId === gameId),
+    () => allSequences
+      .filter(s2 => s2.origin?.gameId === gameId)
+      .sort((a, b) => (a.origin?.moveNumber ?? 0) - (b.origin?.moveNumber ?? 0)),
     [allSequences, gameId],
   );
 
@@ -44,6 +49,8 @@ export default function GameViewer() {
   const [notice, setNotice] = useState<string | null>(null);
   /** Exercice de correction en cours de création : on désigne le coup qu'il fallait jouer. */
   const [fix, setFix] = useState<null | { at: number; answer: number | null; accept: number[] }>(null);
+  /** Exercices cochés dans le panneau latéral, pour une suppression groupée. */
+  const [picked, setPicked] = useState<Set<string>>(new Set());
 
   const replay = useMemo(() => {
     if (!game) return null;
@@ -493,17 +500,47 @@ export default function GameViewer() {
               )}
 
               <div className="card">
-                <h3>Séquences de cette partie <span className="tag">{sequences.length}</span></h3>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem', marginBottom: '.5rem' }}>
+                  <h3 style={{ margin: 0 }}>
+                    Exercices de cette partie <span className="tag">{sequences.length}</span>
+                  </h3>
+                  {picked.size > 0 && (
+                    <button
+                      className="sm danger" style={{ marginLeft: 'auto' }}
+                      onClick={async () => { await removeSequences([...picked]); setPicked(new Set()); }}
+                    >
+                      Supprimer ({picked.size})
+                    </button>
+                  )}
+                  {picked.size === 0 && sequences.length > 1 && (
+                    <button
+                      className="sm" style={{ marginLeft: 'auto' }}
+                      onClick={() => setPicked(new Set(sequences.map(s => s.id)))}
+                    >
+                      Tout cocher
+                    </button>
+                  )}
+                </div>
                 {sequences.length === 0 ? (
-                  <p className="small muted" style={{ margin: 0 }}>Aucune pour l'instant.</p>
+                  <p className="small muted" style={{ margin: 0 }}>Aucun pour l'instant.</p>
                 ) : (
                   <div className="list">
                     {sequences.map(s => (
                       <div key={s.id} className="item" style={{ padding: '.5rem .6rem' }}>
+                        <input
+                          type="checkbox" checked={picked.has(s.id)}
+                          style={{ width: 15, height: 15, flex: '0 0 auto' }}
+                          aria-label={`Sélectionner ${s.name}`}
+                          onChange={() => setPicked(prev => {
+                            const next = new Set(prev);
+                            if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
+                            return next;
+                          })}
+                        />
                         <div className="main">
                           <div className="title" style={{ fontSize: '.85rem' }}>{s.name}</div>
                           <div className="meta">
-                            <span>{s.moves.length} coups</span>
+                            <span className="tag accent">{MODE_LABELS[s.mode]}</span>
                             <span>coup {(s.origin?.moveNumber ?? 0) + 1}</span>
                           </div>
                         </div>
