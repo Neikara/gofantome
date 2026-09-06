@@ -1,10 +1,12 @@
 # GoFantome
 
+**En ligne : https://neikara.github.io/gofantome/**
+
 Entraînement à la lecture au go. On importe ses parties depuis OGS, on enregistre
 la variation qu'on veut apprendre à lire, puis on la rejoue **à l'aveugle** : chaque
 pierre posée clignote et disparaît, il faut tenir la position dans sa tête.
 
-## Démarrer
+## Démarrer en local
 
 ```bash
 npm install
@@ -67,3 +69,10 @@ donc aucun proxy n'est nécessaire :
 - Séquences créées sur un goban vide, sans partie de départ.
 - Répétition espacée : ressortir en priorité les séquences les moins maîtrisées
   (le tri « moins maîtrisées » de la page Séquences en est la première marche).
+
+## Déploiement
+
+Chaque push sur `main` déclenche [le workflow Pages](.github/workflows/deploy.yml) :
+build Vite puis publication. Le site est servi sous le sous-chemin `/gofantome/`,
+d'où le `base` conditionnel dans [vite.config.ts](vite.config.ts). L'application
+utilise `HashRouter`, donc aucune réécriture d'URL n'est nécessaire côté serveur.
