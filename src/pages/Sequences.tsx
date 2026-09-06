@@ -23,6 +23,7 @@ export default function Sequences() {
   const sequences = useStore(s => s.sequences);
   const allAttempts = useStore(s => s.attempts);
   const removeSequence = useStore(s => s.removeSequence);
+  const removeSequences = useStore(s => s.removeSequences);
   const updateSequence = useStore(s => s.updateSequence);
 
   const [sort, setSort] = useState<SortKey>('due');
@@ -31,6 +32,7 @@ export default function Sequences() {
   const [editing, setEditing] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftTags, setDraftTags] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const tags = useMemo(() => {
     const all = new Set<string>();
@@ -62,6 +64,19 @@ export default function Sequences() {
 
   const dueNow = useMemo(() => sequences.filter(s => isDue(s.srs)).length, [sequences]);
 
+  const toggle = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    await removeSequences([...selected]);
+    setSelected(new Set());
+  };
+
   const startEdit = (s: Sequence) => {
     setEditing(s.id);
     setDraftName(s.name);
@@ -88,10 +103,27 @@ export default function Sequences() {
           </p>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '.4rem', alignItems: 'center' }}>
-          <Link className="btn sm primary" to="/review">
-            Réviser{dueNow > 0 ? ` (${dueNow})` : ''}
-          </Link>
-          <Link className="btn sm" to="/">Importer une partie</Link>
+          {selected.size > 0 ? (
+            <>
+              <span className="small muted">{selected.size} sélectionnée{selected.size > 1 ? 's' : ''}</span>
+              <button className="sm danger" onClick={() => void deleteSelected()}>
+                Supprimer la sélection
+              </button>
+              <button className="sm" onClick={() => setSelected(new Set())}>Désélectionner</button>
+            </>
+          ) : (
+            <>
+              {rows.length > 0 && (
+                <button className="sm" onClick={() => setSelected(new Set(rows.map(r => r.seq.id)))}>
+                  Tout sélectionner
+                </button>
+              )}
+              <Link className="btn sm primary" to="/review">
+                Réviser{dueNow > 0 ? ` (${dueNow})` : ''}
+              </Link>
+              <Link className="btn sm" to="/">Importer une partie</Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -143,6 +175,11 @@ export default function Sequences() {
             const max = seq.mode === 'guess' ? 1 : seq.moves.length;
             return (
               <div key={seq.id} className="item">
+                <input
+                  type="checkbox" checked={selected.has(seq.id)} onChange={() => toggle(seq.id)}
+                  style={{ width: 16, height: 16, flex: '0 0 auto' }}
+                  aria-label={`Sélectionner ${seq.name}`}
+                />
                 <div className="main">
                   {editing === seq.id ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>

@@ -42,6 +42,8 @@ export default function GameViewer() {
   const [guessColor, setGuessColor] = useState<'both' | 'black' | 'white'>('both');
   const [guessCount, setGuessCount] = useState(5);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Exercice de correction en cours de création : on désigne le coup qu'il fallait jouer. */
+  const [fix, setFix] = useState<null | { at: number; answer: number | null; accept: number[] }>(null);
 
   const replay = useMemo(() => {
     if (!game) return null;
@@ -121,8 +123,23 @@ export default function GameViewer() {
     : startTurn;
   const nextColor: Color = flip ? (recTurn === 1 ? 2 : 1) : recTurn;
 
-  const displayed = rec ? rec.positions[rec.moves.length] : replay.positions[cursor];
-  const lastMove = rec ? null : (cursor > 0 ? replay.moves[cursor - 1].point : null);
+  const displayed = rec
+    ? rec.positions[rec.moves.length]
+    : replay.positions[fix ? fix.at : cursor];
+  const lastMove = rec || fix ? null : (cursor > 0 ? replay.moves[cursor - 1].point : null);
+
+  const fixMove = fix ? replay.moves[fix.at] : null;
+  const fixColor: Color = fixMove?.color ?? 1;
+  /** Marques de l'éditeur de correction : réponse, variantes, coup réellement joué. */
+  const fixGhosts = fix
+    ? [
+        ...(fix.answer !== null ? [{ point: fix.answer, color: fixColor, label: '✓', tone: 'good' as const }] : []),
+        ...fix.accept.map(pt => ({ point: pt, color: fixColor, label: '+', tone: 'good' as const })),
+        ...(fixMove?.point !== null && fixMove?.point !== undefined && fixMove.point !== fix.answer
+          ? [{ point: fixMove.point, color: fixColor, label: '✗', tone: 'bad' as const }]
+          : []),
+      ]
+    : [];
 
   const startRecording = () => {
     setRec({ startAt: cursor, moves: [], positions: [replay.positions[cursor]] });
@@ -135,6 +152,12 @@ export default function GameViewer() {
   const cancelRecording = () => { setRec(null); setProblem(null); };
 
   const onPoint = (point: number) => {
+    if (fix) {
+      // Une intersection occupée ne peut pas être la réponse.
+      if (replay.positions[fix.at].stones[point] !== 0) return;
+      setFix({ ...fix, answer: point, accept: fix.accept.filter(p => p !== point) });
+      return;
+    }
     if (!rec) return;
     const from = rec.positions[rec.moves.length];
     const res = play(from, point, nextColor);
@@ -197,6 +220,30 @@ export default function GameViewer() {
       else if (start.stones[i] === 2) white.push(i);
     }
     return { black, white };
+  };
+
+  const saveFix = async () => {
+    if (!fix || fix.answer === null || !fixMove) return;
+    const seqId = uid();
+    await addSequence({
+      id: seqId,
+      name: `${gameLabel} — coup ${fix.at + 1} à corriger`,
+      createdAt: Date.now(),
+      size,
+      setup: splitStones(fix.at),
+      moves: [{ point: fix.answer, color: fixMove.color }],
+      accept: fix.accept,
+      playedInGame: fixMove.point,
+      origin: { gameId, gameLabel, moveNumber: fix.at },
+      timerSeconds: GUESS_TIMER_SECONDS,
+      flashMs: 400,
+      mode: 'guess',
+      tags: ['à corriger'],
+      srs: newSrs(),
+      notes: "Le coup joué dans la partie n'était pas le bon : retrouve celui qu'il fallait jouer.",
+    });
+    setFix(null);
+    navigate(`/train/${seqId}`);
   };
 
   const save = async () => {
@@ -278,13 +325,30 @@ export default function GameViewer() {
               size={size}
               stones={displayed.stones}
               markers={markers}
+              ghosts={fixGhosts}
               lastMove={lastMove}
-              cursor={rec ? nextColor : null}
-              onPoint={rec ? onPoint : undefined}
+              cursor={rec ? nextColor : fix ? fixColor : null}
+              onPoint={rec || fix ? onPoint : undefined}
             />
           </div>
 
-          {!rec ? (
+          {fix ? (
+            <div className="toolbar">
+              <span className="muted small">
+                Coup {fix.at + 1} · {fixColor === 1 ? 'Noir' : 'Blanc'} au trait
+              </span>
+              <button
+                onClick={() => setFix({ ...fix, accept: fix.answer !== null && !fix.accept.includes(fix.answer)
+                  ? [...fix.accept, fix.answer] : fix.accept, answer: null })}
+                disabled={fix.answer === null}
+              >
+                Accepter aussi ce coup
+              </button>
+              <button className="sm" onClick={() => setFix({ ...fix, answer: null, accept: [] })}>
+                Effacer
+              </button>
+            </div>
+          ) : !rec ? (
             <>
               <div className="toolbar">
                 <button onClick={() => setCursor(0)} disabled={cursor === 0}>⏮</button>
@@ -327,7 +391,38 @@ export default function GameViewer() {
         </div>
 
         <aside>
-          {!rec ? (
+          {fix ? (
+            <div className="card">
+              <h3>Corriger ce coup</h3>
+              <p className="small muted">
+                Clique sur le goban pour désigner le coup qu'il fallait jouer. Le coup
+                réellement joué est marqué <strong>✗</strong> et servira de contre-exemple.
+              </p>
+              <div className="movelist" style={{ margin: '.6rem 0' }}>
+                <span className={`movechip ${fix.answer === null ? 'pending' : 'current'}`}>
+                  ✓ {fix.answer === null ? '···' : indexToLabel(fix.answer, size)}
+                </span>
+                {fix.accept.map(pt => (
+                  <button
+                    key={pt} className="movechip" style={{ cursor: 'pointer' }}
+                    title="Retirer cette variante"
+                    onClick={() => setFix({ ...fix, accept: fix.accept.filter(x => x !== pt) })}
+                  >
+                    + {indexToLabel(pt, size)} ×
+                  </button>
+                ))}
+                {fixMove?.point !== null && fixMove?.point !== undefined && (
+                  <span className="movechip wrong">✗ {indexToLabel(fixMove.point, size)}</span>
+                )}
+              </div>
+              <div className="row">
+                <button className="primary grow" onClick={() => void saveFix()} disabled={fix.answer === null}>
+                  Enregistrer et s'entraîner
+                </button>
+                <button onClick={() => setFix(null)}>Annuler</button>
+              </div>
+            </div>
+          ) : !rec ? (
             <>
               <div className="card">
                 <h3>Enregistrer une séquence</h3>
@@ -374,6 +469,18 @@ export default function GameViewer() {
                     Créer {guessCount}
                   </button>
                 </div>
+                <hr style={{ border: 0, borderTop: '1px solid var(--line)', margin: '.9rem 0' }} />
+                <p className="small muted">
+                  Sur tes propres parties, le coup joué est souvent l'erreur. Désigne alors
+                  toi-même la bonne réponse.
+                </p>
+                <button
+                  style={{ width: '100%' }}
+                  disabled={cursor >= total}
+                  onClick={() => setFix({ at: cursor, answer: null, accept: [] })}
+                >
+                  Corriger le coup {cursor + 1}
+                </button>
               </div>
 
               {cursor > 0 && replay.moves[cursor - 1].comment && (

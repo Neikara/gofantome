@@ -19,6 +19,7 @@ interface State {
   addSequences: (s: Sequence[]) => Promise<void>;
   updateSequence: (id: string, patch: Partial<Sequence>) => Promise<void>;
   removeSequence: (id: string) => Promise<void>;
+  removeSequences: (ids: string[]) => Promise<void>;
   /** Enregistre l'essai et fait avancer l'échéance de la séquence. */
   recordAttempt: (a: Attempt) => Promise<void>;
   reload: () => Promise<void>;
@@ -112,8 +113,14 @@ export const useStore = create<State>((set, get) => ({
   },
 
   removeSequence: async (id) => {
-    const sequences = get().sequences.filter(s => s.id !== id);
-    const attempts = get().attempts.filter(a => a.seqId !== id);
+    await get().removeSequences([id]);
+  },
+
+  removeSequences: async (ids) => {
+    const doomed = new Set(ids);
+    if (!doomed.size) return;
+    const sequences = get().sequences.filter(s => !doomed.has(s.id));
+    const attempts = get().attempts.filter(a => !doomed.has(a.seqId));
     set({ sequences, attempts });
     await Promise.all([db.saveSequences(sequences), db.saveAttempts(attempts)]);
   },

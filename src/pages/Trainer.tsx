@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Drill from '../components/Drill';
+import GuessEditor, { type GuessAnswer } from '../components/GuessEditor';
 import { useStore } from '../state/store';
 import { MODE_LABELS, type Attempt } from '../services/model';
 import { dueLabel } from '../services/srs';
@@ -13,8 +14,17 @@ export default function Trainer() {
   const recordAttempt = useStore(s => s.recordAttempt);
   const updateSequence = useStore(s => s.updateSequence);
   const attempts = useMemo(() => allAttempts.filter(a => a.seqId === id), [allAttempts, id]);
+  const [editing, setEditing] = useState(false);
 
   const onFinish = useCallback((a: Attempt) => { void recordAttempt(a); }, [recordAttempt]);
+
+  // Position de départ de l'exercice, reconstruite pour l'éditeur de réponse.
+  const stones = useMemo(() => {
+    const out = new Uint8Array((seq?.size ?? 19) ** 2);
+    for (const p of seq?.setup.black ?? []) out[p] = 1;
+    for (const p of seq?.setup.white ?? []) out[p] = 2;
+    return out;
+  }, [seq]);
 
   if (!seq) {
     return (
@@ -91,12 +101,38 @@ export default function Trainer() {
           </p>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '.4rem' }}>
+          {seq.mode === 'guess' && !editing && (
+            <button className="sm" onClick={() => setEditing(true)}>Modifier la réponse</button>
+          )}
           <Link className="btn sm" to="/review">Réviser</Link>
           <Link className="btn sm" to="/sequences">Mes séquences</Link>
         </div>
       </div>
 
-      <Drill key={seq.id} sequence={seq} onFinish={onFinish} best={best} aside={settings} />
+      {editing && seq.mode === 'guess' ? (
+        <>
+          <GuessEditor
+            size={seq.size}
+            stones={stones}
+            color={seq.moves[0]?.color ?? 1}
+            answer={seq.moves[0]?.point ?? null}
+            accept={seq.accept ?? []}
+            playedInGame={seq.playedInGame}
+            onChange={(v: GuessAnswer) => {
+              if (v.answer === null) return;
+              void updateSequence(seq.id, {
+                moves: [{ point: v.answer, color: seq.moves[0]?.color ?? 1 }],
+                accept: v.accept,
+              });
+            }}
+          />
+          <div className="toolbar">
+            <button className="primary" onClick={() => setEditing(false)}>Terminer</button>
+          </div>
+        </>
+      ) : (
+        <Drill key={seq.id} sequence={seq} onFinish={onFinish} best={best} aside={settings} />
+      )}
     </main>
   );
 }

@@ -17,8 +17,11 @@ export interface GobanProps {
   stones: Uint8Array;
   /** Pierres éphémères qui s'effacent d'elles-mêmes. */
   flashes?: Flash[];
-  /** Pierres semi-transparentes (aperçu d'une séquence). */
-  ghosts?: { point: number; color: Color; label?: string | number }[];
+  /**
+   * Pierres semi-transparentes : aperçu d'une séquence, ou marquage d'une intersection.
+   * `tone` entoure la pierre d'un anneau vert (bonne réponse) ou rouge (coup à éviter).
+   */
+  ghosts?: { point: number; color: Color; label?: string | number; tone?: 'good' | 'bad' }[];
   markers?: Map<number, string | number>;
   lastMove?: number | null;
   /** Couleur du curseur ; null pour désactiver l'aperçu au survol. */
@@ -120,8 +123,9 @@ export default function Goban({
         {ghosts.map((g, n) => {
           const { cx, cy } = cell(g.point);
           return (
-            <g key={`g${n}-${g.point}`}>
+            <g key={`g${n}-${g.point}`} className={g.tone ? `is-${g.tone}` : undefined}>
               <circle cx={cx} cy={cy} r={0.475} fill={g.color === 1 ? 'url(#gf-black)' : 'url(#gf-white)'} />
+              {g.tone && <circle className="ghost-ring" cx={cx} cy={cy} r={0.44} />}
               {g.label !== undefined && (
                 <text className={`goban-label ${g.color === 1 ? 'on-black' : 'on-white'}`}
                       x={cx} y={cy} textAnchor="middle" dominantBaseline="central">{g.label}</text>

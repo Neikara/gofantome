@@ -124,7 +124,13 @@ label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .3
 .goban-last { fill: none; stroke-width: .07; }
 .goban-last.on-black { stroke: #ff6b5e; }
 .goban-last.on-white { stroke: #d0342a; }
-.goban-ghosts { opacity: .38; }
+/* L'opacité est portée par chaque marque, pas par le groupe : celle d'un parent SVG
+   se multiplie avec celle de ses enfants, un marquage ne pourrait donc pas ressortir. */
+.goban-ghosts > g { opacity: .38; }
+.goban-ghosts > g.is-good, .goban-ghosts > g.is-bad { opacity: .95; }
+.ghost-ring { fill: none; stroke-width: .09; }
+.is-good .ghost-ring { stroke: var(--jade); }
+.is-bad .ghost-ring { stroke: var(--danger); }
 .goban-hover { opacity: .42; pointer-events: none; }
 .goban-target { fill: transparent; cursor: pointer; }
 

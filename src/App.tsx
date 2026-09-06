@@ -7,6 +7,7 @@ import GameViewer from './pages/GameViewer';
 import Sequences from './pages/Sequences';
 import Trainer from './pages/Trainer';
 import Review from './pages/Review';
+import Intuition from './pages/Intuition';
 
 export default function App() {
   const hydrate = useStore(s => s.hydrate);
@@ -28,6 +29,7 @@ export default function App() {
         <nav className="nav">
           <NavLink to="/" end>Parties</NavLink>
           <NavLink to="/sequences">Séquences</NavLink>
+          <NavLink to="/intuition">Intuition</NavLink>
           <NavLink to="/review">
             Réviser
             {dueCount > 0 && <span className="nav-badge">{dueCount}</span>}
@@ -43,6 +45,7 @@ export default function App() {
           <Route path="/game/:id" element={<GameViewer />} />
           <Route path="/sequences" element={<Sequences />} />
           <Route path="/review" element={<Review />} />
+          <Route path="/intuition" element={<Intuition />} />
           <Route path="/train/:id" element={<Trainer />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

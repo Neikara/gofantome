@@ -71,9 +71,16 @@ export interface Sequence {
   srs: SrsState;
   /**
    * Réponses supplémentaires acceptées au premier coup, pour « deviner le coup ».
-   * Vide tant qu'on ne lit pas les coups suggérés par KataGo.
+   * Se remplira aussi avec les coups suggérés par KataGo, le jour où on les lira.
    */
   accept?: number[];
+  /**
+   * Le coup réellement joué dans la partie, quand il n'est PAS la bonne réponse.
+   * C'est le cas dès qu'on fabrique un exercice à partir de sa propre erreur : la
+   * référence devient le coup qu'on aurait dû jouer, et celui-ci sert de contraste
+   * à la correction.
+   */
+  playedInGame?: number | null;
 }
 
 export interface Attempt {

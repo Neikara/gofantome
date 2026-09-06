@@ -155,7 +155,18 @@ export default function GuessDrill({
             size={seq.size}
             stones={hidden ? empty : stones}
             flashes={flashes}
-            ghosts={solved ? [{ point: expected.point as number, color: expected.color, label: '?' }] : []}
+            ghosts={solved ? [
+              { point: expected.point as number, color: expected.color, label: '✓', tone: 'good' as const },
+              ...(seq.accept ?? []).map(pt => ({
+                point: pt, color: expected.color, label: '+', tone: 'good' as const,
+              })),
+              // Le coup joué dans la partie n'apparaît que s'il diffère de la réponse :
+              // c'est tout l'intérêt d'un exercice bâti sur une erreur.
+              ...(seq.playedInGame !== null && seq.playedInGame !== undefined
+                  && seq.playedInGame !== expected.point
+                ? [{ point: seq.playedInGame, color: expected.color, label: '✗', tone: 'bad' as const }]
+                : []),
+            ] : []}
             cursor={phase === 'playing' && expected ? expected.color : null}
             onPoint={phase === 'playing' ? answer : undefined}
             muted={phase === 'done'}
@@ -219,7 +230,7 @@ export default function GuessDrill({
             </div>
             <div className="stat-row" style={{ marginTop: '.8rem' }}>
               <div className="stat">
-                <div className="k">Coup joué</div>
+                <div className="k">{seq.playedInGame !== undefined && seq.playedInGame !== null ? 'Bonne réponse' : 'Coup joué'}</div>
                 <div className="v" style={{ fontSize: '1.1rem' }}>
                   {expected ? indexToLabel(expected.point, seq.size) : '—'}
                 </div>
@@ -229,8 +240,15 @@ export default function GuessDrill({
                 <div className="v">{(result.durationMs / 1000).toFixed(1)}s</div>
               </div>
             </div>
-            {seq.origin && (
+            {seq.playedInGame !== undefined && seq.playedInGame !== null
+              && seq.playedInGame !== expected?.point && (
               <p className="small muted" style={{ marginTop: '.7rem', marginBottom: 0 }}>
+                Dans la partie, <strong>{indexToLabel(seq.playedInGame, seq.size)}</strong> avait
+                été joué (marqué ✗).
+              </p>
+            )}
+            {seq.origin && (
+              <p className="small muted" style={{ marginTop: '.5rem', marginBottom: 0 }}>
                 Coup {seq.origin.moveNumber + 1} de {seq.origin.gameLabel}.
               </p>
             )}

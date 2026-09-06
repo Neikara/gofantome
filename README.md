@@ -10,7 +10,8 @@ Deux types d'exercice pour l'instant :
 - **Lecture à l'aveugle** — rejouer une séquence de mémoire : chaque pierre posée
   clignote puis disparaît, il faut tenir la position dans sa tête.
 - **Deviner le coup** — une position, quelques secondes, un seul coup, sans calculer.
-  La référence est le coup réellement joué : à faire sur des parties plus fortes que soi.
+  Sur une partie plus forte que soi, le coup joué fait référence ; sur les siennes, on
+  désigne soi-même le coup qu'il fallait jouer, et le coup réel devient le contre-exemple.
 
 ## Démarrer en local
 
@@ -52,6 +53,11 @@ du SGF embarqué : ils n'apportent rien à l'exercice et concernent des tiers.
 4. **Réviser** — la file sert les exercices dus, du plus en retard au plus récent.
    Filtre par type ou par étiquette, ou ne filtre pas : tout mélangé, c'est le plus
    proche d'une vraie partie. Le compteur dans la barre du haut indique ce qui attend.
+5. **Intuition** — tous les exercices d'un coup au même endroit, enchaînés en série de
+   10, 20 ou 50, au hasard ou en commençant par les moins sûrs. Ici on cherche le volume,
+   pas l'échéance : la reconnaissance de formes se muscle par l'exposition, pas par la
+   révision espacée. Taux de réussite global, filtres « jamais tentés » et « déjà ratés »,
+   et sélection multiple pour faire le ménage.
 
 ### Répétition espacée
 
@@ -78,7 +84,8 @@ src/
   state/      store zustand
   components/ Goban.tsx (SVG, pierres permanentes / éphémères / fantômes)
               BlindDrill / GuessDrill : les moteurs d'exercice, Drill aiguille selon le mode
-  pages/      Library, GameViewer, Sequences, Trainer, Review
+              GuessEditor : désigner la bonne réponse ; DrillSession : enchaîner une file
+  pages/      Library, GameViewer, Sequences, Trainer, Review, Intuition
 ```
 
 Le moteur a été validé en rejouant intégralement une douzaine de parties OGS
