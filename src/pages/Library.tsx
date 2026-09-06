@@ -31,6 +31,7 @@ export default function Library() {
   const removeGame = useStore(s => s.removeGame);
   const sequences = useStore(s => s.sequences);
   const reload = useStore(s => s.reload);
+  const loadDemo = useStore(s => s.loadDemo);
 
   const [username, setUsername] = useState(() => localStorage.getItem(LAST_USER_KEY) ?? '');
   const [player, setPlayer] = useState<ogs.OgsPlayer | null>(null);
@@ -170,6 +171,9 @@ export default function Library() {
           <p className="sub">Importe tes parties OGS, puis ouvre-en une pour enregistrer une séquence à lire.</p>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '.4rem' }}>
+          <button className="sm" onClick={() => void loadDemo()} title="Réinstalle la partie et les séquences de démonstration">
+            Exemple
+          </button>
           <button className="sm" onClick={() => void doExport()}>Exporter</button>
           <button className="sm" onClick={() => fileRef.current?.click()}>Ouvrir un fichier</button>
           <input
@@ -301,7 +305,12 @@ export default function Library() {
 
       <h2 style={{ marginTop: '1.75rem' }}>Ma bibliothèque <span className="tag">{games.length}</span></h2>
       {games.length === 0 ? (
-        <div className="empty">Rien encore. Cherche ton pseudo OGS ci-dessus, ou colle un SGF.</div>
+        <div className="empty">
+          <p>Rien encore. Cherche ton pseudo OGS ci-dessus, ou colle un SGF.</p>
+          <button className="primary" onClick={() => void loadDemo()}>
+            Charger la partie d'exemple
+          </button>
+        </div>
       ) : (
         <div className="list">
           {games.map(g => (

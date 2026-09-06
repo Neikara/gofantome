@@ -18,6 +18,17 @@ Aucun serveur, aucun compte : tout tourne dans le navigateur. Les parties et les
 séquences vivent dans IndexedDB, avec un export/import JSON depuis la page Parties
 pour ne rien perdre en changeant de machine.
 
+## Pour essayer tout de suite
+
+À la première visite, une partie OGS réelle (11303468, *dorota 6k vs crodnu 1k*) et deux
+séquences prêtes à jouer sont installées automatiquement : **Combat au centre** (6 coups au
+milieu du plateau, sans repère de bord) et **Joseki du coin inférieur gauche** (8 coups, plus
+facile à situer). Rien n'est écrasé si la bibliothèque contient déjà quelque chose, et le
+bouton « Exemple » de la page Parties les réinstalle à la demande.
+
+Les séquences sont dérivées du SGF au chargement — aucune coordonnée n'est écrite en dur
+dans [demo.ts](src/services/demo.ts).
+
 ## Le parcours
 
 1. **Parties** — cherche ton pseudo OGS pour lister tes parties, ou colle un numéro

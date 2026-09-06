@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import type { StoredGame, Sequence, Attempt } from '../services/model';
 import * as db from '../services/storage';
+import { buildDemoData } from '../services/demo';
+
+/** Pose une fois la demo installee, pour qu'elle ne revienne pas apres suppression. */
+const DEMO_FLAG = 'gofantome:demoSeeded';
 
 interface State {
   ready: boolean;
@@ -15,6 +19,8 @@ interface State {
   removeSequence: (id: string) => Promise<void>;
   addAttempt: (a: Attempt) => Promise<void>;
   reload: () => Promise<void>;
+  /** (Re)charge la partie et les séquences de démonstration. */
+  loadDemo: () => Promise<void>;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -28,7 +34,32 @@ export const useStore = create<State>((set, get) => ({
     const [games, sequences, attempts] = await Promise.all([
       db.loadGames(), db.loadSequences(), db.loadAttempts(),
     ]);
+
+    // Première visite seulement : on installe la démo si l'utilisateur n'a rien à lui.
+    const untouched = !games.length && !sequences.length && !localStorage.getItem(DEMO_FLAG);
+    if (untouched) {
+      try {
+        const demo = buildDemoData();
+        await Promise.all([db.saveGames([demo.game]), db.saveSequences(demo.sequences)]);
+        localStorage.setItem(DEMO_FLAG, '1');
+        set({ games: [demo.game], sequences: demo.sequences, attempts, ready: true });
+        return;
+      } catch {
+        // Une démo illisible ne doit pas empêcher l'application de démarrer.
+      }
+    }
+
     set({ games, sequences, attempts, ready: true });
+  },
+
+  loadDemo: async () => {
+    const demo = buildDemoData();
+    const games = [demo.game, ...get().games.filter(g => g.id !== demo.game.id)];
+    const demoIds = new Set(demo.sequences.map(s => s.id));
+    const sequences = [...demo.sequences, ...get().sequences.filter(s => !demoIds.has(s.id))];
+    localStorage.setItem(DEMO_FLAG, '1');
+    set({ games, sequences });
+    await Promise.all([db.saveGames(games), db.saveSequences(sequences)]);
   },
 
   reload: async () => {

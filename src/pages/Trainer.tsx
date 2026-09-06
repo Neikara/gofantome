@@ -244,6 +244,7 @@ export default function Trainer() {
               <p className="small muted">
                 Un coup faux coûte 1 point, et le bon coup t'est montré pour que tu puisses continuer.
               </p>
+              {seq.notes && <div className="banner info small">{seq.notes}</div>}
               <div className="stat-row" style={{ marginTop: '.8rem' }}>
                 <div className="stat"><div className="k">Coups</div><div className="v">{total}</div></div>
                 <div className="stat"><div className="k">Temps</div><div className="v">{seq.timerSeconds}s</div></div>
